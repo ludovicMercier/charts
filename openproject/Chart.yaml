@@ -1,0 +1,11 @@
+apiVersion: "v1"
+name: openproject
+version: 1.0.0
+description: A simple chart to provide an instance of openproject
+keywords:
+  - openproject
+maintainers:
+  - name: "Mercier Ludovic"
+    email: "ludovic.mercier.lm@gmail.com"
+appVersion: "8.2.0"
+tillerVersion: ">2.0.0"
