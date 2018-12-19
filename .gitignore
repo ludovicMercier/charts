@@ -1,3 +1,4 @@
 # idea projects properties
 .idea
-**/*.tgz
+**/charts/*.tgz
+**/*.lock
