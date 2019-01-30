@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "openproject.fullname" . }}
+  labels:
+    app: {{ template "openproject.name" . }}
+    chart: {{ template "openproject.chart" . }}
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "openproject.name" . }}
+
+  template:
+    metadata:
+      name: {{ template "openproject.fullname" . }}
+      labels:
+        app: {{ template "openproject.name" . }}
+        chart: {{ template "openproject.chart" . }}
+        release: {{ .Release.Name | quote }}
+        heritage: {{ .Release.Service | quote }}
+    spec:
+      containers:
+      - name: {{ template "openproject.fullname" . }}
+        image: {{ template "openproject.image" . }}
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        ports:
+          - name: openproject
+            containerPort: 8080
+        env:
+          {{- if .Values.postgresql.enabled }}
+          - name: DB_PWD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-postgresql
+                key: postgresql-password
+          {{- end }}
+          - name: SECRET_KEY_BASE
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "openproject.secretKey" . }}
+                key: openproject-password
+          {{- if .Values.postgresql.enabled }}
+          - name: DATABASE_URL
+            value: postgres://{{ .Values.postgresql.postgresqlUsername }}:$(DB_PWD)@{{ .Release.Name  }}-postgresql:{{ .Values.postgresql.service.port}}/{{ .Values.postgresql.postgresqlDatabase }}
+          {{- end}}
+        volumeMounts:
+          - mountPath: /var/db/openproject
+            name: data
+      volumes:
+      {{- if and .Values.persistence.enabled .Values.persistence.existingClaim }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistence.existingClaim }}
+      {{- else if not .Values.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- else if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistence.existingClaim | default (include "openproject.fullname" .) }}-pvc
+      {{- end }}
+
+
+
